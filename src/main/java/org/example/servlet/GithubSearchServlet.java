@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 
 @WebServlet("/search")
 public class GithubSearchServlet extends HttpServlet{
@@ -23,21 +24,36 @@ public class GithubSearchServlet extends HttpServlet{
             return;
         }
 
-        String apiUrl = "https://api.github.com/search/users?q=" + searchTerm;
+        try {
+            String apiUrl = String.format("https://api.github.com/search/users?q=%s", searchTerm);
 
-        GithubUserService apiService = new GithubUserService();
-        String jsonResponse = apiService.fetchApiResponse(apiUrl, "GET");
+            GithubUserService apiService = new GithubUserService();
+            String jsonResponse = apiService.fetchApiResponse(apiUrl, "GET");
 
-        ObjectMapper mapper = new ObjectMapper();
-        GitHubResponse gitHubResponse = mapper.readValue(jsonResponse, GitHubResponse.class);
+            ObjectMapper mapper = new ObjectMapper();
+            GitHubResponse gitHubResponse = mapper.readValue(jsonResponse, GitHubResponse.class);
 
-        GithubUserRepository repo = new GithubUserRepository();
-        repo.saveUsers(gitHubResponse);
-        repo.saveSearchHistory(searchTerm, jsonResponse);
+            GithubUserRepository repo = new GithubUserRepository();
+            repo.saveUsers(gitHubResponse);
+            repo.saveSearchHistory(searchTerm, jsonResponse);
 
-        response.setContentType("application/json");
-        PrintWriter out = response.getWriter();
-        out.print(jsonResponse);
-        out.flush();
+            response.setContentType("application/json");
+            PrintWriter out = response.getWriter();
+            out.print(jsonResponse);
+            out.flush();
+        } catch (IOException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.getWriter().write("Error: Failed to fetch or parse GitHub API response");
+        } catch (SQLException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.getWriter().write("Error: Database error occurred while saving data");
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.getWriter().write("Error: Unexpected server error: " + e.getMessage());
+        }
+
     }
 }

@@ -3,6 +3,7 @@ package org.example.repository;
 import org.example.model.Githubuser;
 import org.example.model.GitHubResponse;
 import org.example.util.ConfigLoader;
+import org.example.util.ConnectionPool;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,12 +17,13 @@ public class GithubUserRepository{
     String dbUsername = props.getProperty("db.username");
     String dbPassword = props.getProperty("db.password");
 
-    public void saveUsers(GitHubResponse gitHubResponse) {
-        try {
-            Connection conn = DriverManager.getConnection(dbURL, dbUsername, dbPassword);
+    public void saveUsers(GitHubResponse gitHubResponse) throws SQLException{
+        String sql = "INSERT INTO github_users (id, login, html_url, avatar_url, score) " +
+                "VALUES(?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
 
-            String sql = "INSERT INTO github_users (id, login, html_url, avatar_url, score) " +
-                    "VALUES(?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
+        Connection conn = null;
+        try {
+            conn = ConnectionPool.getConnection();
 
             PreparedStatement pstmt = conn.prepareStatement(sql);
 
@@ -31,29 +33,32 @@ public class GithubUserRepository{
                 pstmt.setString(3, user.html_url);
                 pstmt.setString(4, user.avatar_url);
                 pstmt.setDouble(5, user.score);
-                pstmt.executeUpdate();
+                pstmt.addBatch();
             }
-        } catch (Exception exception) {
-            exception.printStackTrace();
+            pstmt.executeBatch();
+        } catch (SQLException e) {
+            throw new SQLException("Error saving GitHub users", e);
+        } finally {
+            ConnectionPool.releaseConnection(conn);
         }
     }
 
-    public void saveSearchHistory(String searchTerm, String rawJsonResponse) {
-        Properties props = ConfigLoader.loadProperties();
-        String dbURL = props.getProperty("db.url");
-        String dbUsername = props.getProperty("db.username");
-        String dbPassword = props.getProperty("db.password");
+    public void saveSearchHistory(String searchTerm, String rawJsonResponse)  throws SQLException{
+        String sql = "INSERT INTO history (search_term, response_json) VALUES (?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(dbURL, dbUsername, dbPassword);
-             PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT INTO history (search_term, response_json) VALUES (?, ?)")) {
-
-            stmt.setString(1, searchTerm);
-            stmt.setString(2, rawJsonResponse);
-            stmt.executeUpdate();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        Connection conn = null;
+        try {
+            conn = ConnectionPool.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, searchTerm);
+                stmt.setString(2, rawJsonResponse);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new SQLException("Error saving search history", e);
+        } finally {
+            ConnectionPool.releaseConnection(conn);
         }
     }
+
 }
