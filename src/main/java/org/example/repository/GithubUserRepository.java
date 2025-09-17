@@ -43,8 +43,9 @@ public class GithubUserRepository{
         }
     }
 
-    public void saveSearchHistory(String searchTerm, String rawJsonResponse)  throws SQLException{
-        String sql = "INSERT INTO history (search_term, response_json) VALUES (?, ?)";
+    public void saveSearchHistory(String searchTerm, String rawJsonResponse, long userId)
+            throws SQLException{
+        String sql = "INSERT INTO history (search_term, response_json, user_id) VALUES (?, ?, ?)";
 
         Connection conn = null;
         try {
@@ -52,6 +53,7 @@ public class GithubUserRepository{
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, searchTerm);
                 stmt.setString(2, rawJsonResponse);
+                stmt.setLong(3, userId);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {

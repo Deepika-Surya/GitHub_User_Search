@@ -35,7 +35,9 @@ public class GithubSearchServlet extends HttpServlet{
 
             GithubUserRepository repo = new GithubUserRepository();
             repo.saveUsers(gitHubResponse);
-            repo.saveSearchHistory(searchTerm, jsonResponse);
+            long userId = gitHubResponse.items.get(0).id;
+
+            repo.saveSearchHistory(searchTerm, jsonResponse, userId);
 
             response.setContentType("application/json");
             PrintWriter out = response.getWriter();
