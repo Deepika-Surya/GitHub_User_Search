@@ -5,10 +5,8 @@ import org.example.model.GitHubResponse;
 import org.example.util.ConfigLoader;
 import org.example.util.ConnectionPool;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.List;
 import java.util.Properties;
 
 public class GithubUserRepository{
@@ -43,9 +41,9 @@ public class GithubUserRepository{
         }
     }
 
-    public void saveSearchHistory(String searchTerm, String rawJsonResponse, long userId)
+    public int saveSearchHistory(String searchTerm, String rawJsonResponse)
             throws SQLException{
-        String sql = "INSERT INTO history (search_term, response_json, user_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO history (search_term, response_json) VALUES (?, ?) RETURNING search_id";
 
         Connection conn = null;
         try {
@@ -53,8 +51,14 @@ public class GithubUserRepository{
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, searchTerm);
                 stmt.setString(2, rawJsonResponse);
-                stmt.setLong(3, userId);
-                stmt.executeUpdate();
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("search_id");
+                    } else {
+                        throw new SQLException("Failed to retrieve search_id");
+                    }
+
+                }
             }
         } catch (SQLException e) {
             throw new SQLException("Error saving search history", e);
@@ -62,5 +66,23 @@ public class GithubUserRepository{
             ConnectionPool.releaseConnection(conn);
         }
     }
+
+    public void saveSearchResults(int searchId, List<Githubuser> users) throws SQLException {
+        String sql = "INSERT INTO search_results (search_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
+        Connection conn = null;
+        try {
+            conn = ConnectionPool.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            for (Githubuser user : users) {
+                pstmt.setInt(1, searchId);
+                pstmt.setLong(2, user.id);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        } finally {
+            ConnectionPool.releaseConnection(conn);
+        }
+    }
+
 
 }
