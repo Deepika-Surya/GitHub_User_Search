@@ -1,4 +1,6 @@
-package org.example.service;
+package org.GithubUserSearch.service;
+
+import org.GithubUserSearch.Common.Constants;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,7 +15,7 @@ public class GithubUserService {
             URL url = new URL(apiUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
-            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Accept", Constants.CONTENT_TYPE_JSON);
 
             try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                 String line;

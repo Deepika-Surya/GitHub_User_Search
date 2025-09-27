@@ -1,4 +1,6 @@
-package org.example.util;
+package org.GithubUserSearch.util;
+
+import org.GithubUserSearch.Common.Constants;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,7 +29,7 @@ public class ConnectionPool {
         }
     } catch(
     SQLException e){
-        throw new RuntimeException("Failed to initialize connection pool", e);
+        throw new RuntimeException(Constants.ERROR_CONNECTION_POOL_INIT, e);
     }
 }
 
@@ -36,7 +38,7 @@ public class ConnectionPool {
             return pool.take();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SQLException("Interrupted while waiting for DB connection", e);
+            throw new SQLException(Constants.ERROR_CONNECTION_INTERRUPTED, e);
         }
     }
 

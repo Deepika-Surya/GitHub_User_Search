@@ -1,7 +1,6 @@
-package org.example.model;
+package org.GithubUserSearch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Githubuser {
@@ -11,4 +10,5 @@ public class Githubuser {
     public String html_url;
     public String type;
     public double score;
+    public int searchId;
 }

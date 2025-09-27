@@ -1,4 +1,6 @@
-package org.example.util;
+package org.GithubUserSearch.util;
+
+import org.GithubUserSearch.Common.Constants;
 
 import java.io.*;
 import java.util.Properties;
@@ -13,7 +15,7 @@ public class ConfigLoader {
             if (inputStream != null) {
                 properties.load(inputStream);
             } else {
-                System.err.println("Properties file not found in classpath.");
+                System.err.println(Constants.ERROR_PROPERTIES_NOT_FOUND);
             }
         } catch (IOException e) {
             e.printStackTrace();

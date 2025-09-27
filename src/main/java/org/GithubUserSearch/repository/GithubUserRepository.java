@@ -1,9 +1,10 @@
-package org.example.repository;
+package org.GithubUserSearch.repository;
 
-import org.example.model.Githubuser;
-import org.example.model.GitHubResponse;
-import org.example.util.ConfigLoader;
-import org.example.util.ConnectionPool;
+import org.GithubUserSearch.Common.Constants;
+import org.GithubUserSearch.model.Githubuser;
+import org.GithubUserSearch.model.GitHubResponse;
+import org.GithubUserSearch.util.ConfigLoader;
+import org.GithubUserSearch.util.ConnectionPool;
 
 import java.sql.*;
 import java.util.List;
@@ -16,8 +17,8 @@ public class GithubUserRepository{
     String dbPassword = props.getProperty("db.password");
 
     public void saveUsers(GitHubResponse gitHubResponse) throws SQLException{
-        String sql = "INSERT INTO github_users (id, login, html_url, avatar_url, score) " +
-                "VALUES(?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
+        String sql = "INSERT INTO github_users (id, login, html_url, avatar_url, score, search_id) " +
+                "VALUES(?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         try {
@@ -31,11 +32,12 @@ public class GithubUserRepository{
                 pstmt.setString(3, user.html_url);
                 pstmt.setString(4, user.avatar_url);
                 pstmt.setDouble(5, user.score);
+                pstmt.setInt(6, user.searchId);
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            throw new SQLException("Error saving GitHub users", e);
+            throw new SQLException(Constants.ERROR_SAVE_USERS_FAILED, e);
         } finally {
             ConnectionPool.releaseConnection(conn);
         }
@@ -55,34 +57,15 @@ public class GithubUserRepository{
                     if (rs.next()) {
                         return rs.getInt("search_id");
                     } else {
-                        throw new SQLException("Failed to retrieve search_id");
+                        throw new SQLException(Constants.ERROR_SEARCH_ID_NOT_FOUND);
                     }
 
                 }
             }
         } catch (SQLException e) {
-            throw new SQLException("Error saving search history", e);
+            throw new SQLException(Constants.ERROR_SAVE_HISTORY_FAILED, e);
         } finally {
             ConnectionPool.releaseConnection(conn);
         }
     }
-
-    public void saveSearchResults(int searchId, List<Githubuser> users) throws SQLException {
-        String sql = "INSERT INTO search_results (search_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
-        Connection conn = null;
-        try {
-            conn = ConnectionPool.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            for (Githubuser user : users) {
-                pstmt.setInt(1, searchId);
-                pstmt.setLong(2, user.id);
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-        } finally {
-            ConnectionPool.releaseConnection(conn);
-        }
-    }
-
-
 }
