@@ -1,7 +1,7 @@
 package org.GithubUserSearch.Common;
 
 public class Constants {
-    public static final String GITHUB_SEARCH_URL = "https://api.github.com/search/users?q=%s";
+    public static final String GITHUB_SEARCH_URL = "https://api.github.com/search/users?q=%s&page=%d";
 
     public static final String CONTENT_TYPE_JSON = "application/json";
 

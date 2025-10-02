@@ -50,18 +50,16 @@ public class GithubUserRepository{
         Connection conn = null;
         try {
             conn = ConnectionPool.getConnection();
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, searchTerm);
                 stmt.setString(2, rawJsonResponse);
-                try (ResultSet rs = stmt.executeQuery()) {
+
+                ResultSet rs = stmt.executeQuery();
                     if (rs.next()) {
                         return rs.getInt("search_id");
                     } else {
                         throw new SQLException(Constants.ERROR_SEARCH_ID_NOT_FOUND);
                     }
-
-                }
-            }
         } catch (SQLException e) {
             throw new SQLException(Constants.ERROR_SAVE_HISTORY_FAILED, e);
         } finally {
